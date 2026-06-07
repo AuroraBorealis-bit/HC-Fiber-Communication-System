@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>光纤通信系统 - 3D立体流程图</title>
     <style>
         * {
@@ -16,6 +16,7 @@
             background: #0a0a0f;
             color: #e0e0e0;
             overflow: hidden;
+            touch-action: none;
         }
 
         #canvas-container {
@@ -24,7 +25,7 @@
             position: relative;
         }
 
-        /* 玻璃拟态UI */
+        /* 玻璃拟态UI - 基础样式 */
         .ui-panel {
             position: absolute;
             background: rgba(15, 20, 35, 0.9);
@@ -36,6 +37,7 @@
             z-index: 100;
         }
 
+        /* 头部 - 桌面端 */
         .header {
             top: 20px;
             left: 20px;
@@ -78,13 +80,14 @@
             box-shadow: 0 0 8px currentColor;
         }
 
+        /* 信息面板 */
         .info-panel {
             top: 100px;
             right: 20px;
             width: 320px;
             max-height: calc(100vh - 140px);
             overflow-y: auto;
-            display: none; /* 默认隐藏 */
+            display: none;
         }
 
         .info-panel.active {
@@ -201,6 +204,7 @@
             margin-top: 5px;
         }
 
+        /* 控制栏 */
         .controls-bar {
             bottom: 30px;
             left: 50%;
@@ -222,6 +226,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            white-space: nowrap;
         }
 
         button:hover {
@@ -277,7 +282,107 @@
             z-index: 300;
         }
 
-        /* 自定义滚动条 */
+        /* 移动端折叠面板 */
+        .mobile-toggle {
+            display: none;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 101;
+            padding: 8px 12px;
+            font-size: 0.8em;
+        }
+
+        .header-collapsed {
+            display: none;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        .header-collapsed h1 {
+            font-size: 1em;
+            margin: 0;
+        }
+
+        /* ==================== 移动端适配 ==================== */
+        @media (max-width: 768px) {
+            .header {
+                display: none;
+            }
+
+            .header-collapsed {
+                display: block;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .header-expanded {
+                position: absolute;
+                top: 60px;
+                left: 10px;
+                right: 10px;
+                display: none;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header-expanded.show {
+                display: flex;
+            }
+
+            .header-expanded .wavelength-legend {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .info-panel {
+                top: auto;
+                bottom: 80px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+                max-height: 50vh;
+            }
+
+            .controls-bar {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                transform: none;
+                flex-wrap: wrap;
+                gap: 6px;
+                justify-content: center;
+            }
+
+            .controls-bar button {
+                padding: 8px 12px;
+                font-size: 0.75em;
+                flex: 1;
+                min-width: 60px;
+                justify-content: center;
+            }
+
+            .show-info-btn {
+                top: auto;
+                bottom: 80px;
+                right: 10px;
+            }
+        }
+
+        /* 超小屏幕 */
+        @media (max-width: 380px) {
+            .controls-bar button {
+                padding: 6px 8px;
+                font-size: 0.7em;
+            }
+        }
+
         .info-panel::-webkit-scrollbar {
             width: 6px;
         }
@@ -298,8 +403,8 @@
         <div class="loader" id="loader">正在构建光纤系统模型...</div>
     </div>
 
-    <!-- 顶部标题栏 -->
-    <div class="ui-panel header">
+    <!-- 桌面端头部 -->
+    <div class="ui-panel header" id="desktopHeader">
         <div>
             <h1>🔬 空芯光纤通信系统</h1>
             <div class="subtitle"></div>
@@ -319,6 +424,32 @@
             </div>
         </div>
     </div>
+
+    <!-- 移动端折叠头部 -->
+    <div class="ui-panel header-collapsed" id="mobileHeaderCollapsed">
+        <h1>🔬 光纤系统</h1>
+    </div>
+
+    <!-- 移动端展开头部 -->
+    <div class="ui-panel header-expanded" id="mobileHeaderExpanded">
+        <div class="wavelength-legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ff1744; color: #ff1744;"></div>
+                <span>1550nm 信号光</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #00e676; color: #00e676;"></div>
+                <span>1080nm 泵浦光</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ff9100; color: #ff9100;"></div>
+                <span>包层光 (需剥离)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动端切换按钮 -->
+    <button class="mobile-toggle" id="mobileToggle">📊 图例</button>
 
     <!-- 信息面板 -->
     <div class="ui-panel info-panel active" id="infoPanel">
@@ -413,6 +544,7 @@
         let showCladding = true;
         let selectedComponent = null;
         let time = 0;
+        let isMobile = false;
 
         // 组件配置
         const COMPONENT_DATA = {
@@ -422,7 +554,7 @@
                 color: 0xff1744,
                 loss: 0,
                 desc: '信号光源，输出波长1550nm',
-                position: new THREE.Vector3(-12, 0, 2)
+                position: new THREE.Vector3(-14, 0, 2.5)
             },
             laser1080: {
                 name: '1080nm Laser',
@@ -430,7 +562,15 @@
                 color: 0x00e676,
                 loss: 0,
                 desc: '泵浦光源，输出波长1080nm',
-                position: new THREE.Vector3(-12, 0, -2)
+                position: new THREE.Vector3(-14, 0, -2.5)
+            },
+            cps1080: {
+                name: 'CPS',
+                type: 'cps',
+                color: 0xff5722,
+                loss: 0,
+                desc: '1080nm泵浦光预处理包层光剥离器',
+                position: new THREE.Vector3(-10, 0, -2.5)
             },
             wdm1: {
                 name: 'WDM 合束器',
@@ -486,12 +626,14 @@
                 color: 0xab47bc,
                 loss: 4.2,
                 desc: 'Mode Field Adapter，模场匹配与光电转换',
-                position: new THREE.Vector3(14, 0, 2)
+                position: new THREE.Vector3(14, 0, 2.5)
             }
         };
 
         // ==================== 初始化 ====================
         function init() {
+            isMobile = window.innerWidth <= 768;
+            
             const container = document.getElementById('canvas-container');
 
             // 场景
@@ -499,9 +641,13 @@
             scene.background = new THREE.Color(0x050508);
             scene.fog = new THREE.FogExp2(0x050508, 0.015);
 
-            // 相机
+            // 相机 - 移动端调整视角
             camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 12, 18);
+            if (isMobile) {
+                camera.position.set(0, 18, 25);
+            } else {
+                camera.position.set(0, 12, 18);
+            }
             camera.lookAt(2, 0, 0);
 
             // 渲染器
@@ -515,14 +661,20 @@
             // 后处理
             setupPostProcessing();
 
-            // 控制器
+            // 控制器 - 移动端优化
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.maxPolarAngle = Math.PI / 2.2;
             controls.minDistance = 5;
-            controls.maxDistance = 40;
+            controls.maxDistance = 50;
             controls.target.set(2, 0, 0);
+            
+            if (isMobile) {
+                controls.rotateSpeed = 0.5;
+                controls.panSpeed = 0.5;
+                controls.zoomSpeed = 0.8;
+            }
 
             // 射线检测
             raycaster = new THREE.Raycaster();
@@ -793,7 +945,8 @@
         function createFiberConnections() {
             const connections = [
                 { from: 'laser1550', to: 'wdm1', type: 'signal' },
-                { from: 'laser1080', to: 'wdm1', type: 'pump' },
+                { from: 'laser1080', to: 'cps1080', type: 'pump' },
+                { from: 'cps1080', to: 'wdm1', type: 'pump' },
                 { from: 'wdm1', to: 'fiber1', type: 'combined' },
                 { from: 'fiber1', to: 'hollowFiber', type: 'combined' },
                 { from: 'hollowFiber', to: 'splice2', type: 'combined' },
@@ -1087,6 +1240,11 @@
         function setupEvents() {
             renderer.domElement.addEventListener('click', onMouseClick);
             renderer.domElement.addEventListener('mousemove', onMouseMove);
+            
+            // 移动端触摸事件
+            renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+            renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+            
             window.addEventListener('resize', onWindowResize);
 
             // 信息面板关闭按钮
@@ -1105,6 +1263,17 @@
                 showBtn.classList.remove('visible');
                 showToast('信息面板已显示');
             });
+
+            // 移动端头部折叠
+            const mobileToggle = document.getElementById('mobileToggle');
+            const mobileHeaderExpanded = document.getElementById('mobileHeaderExpanded');
+            
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', () => {
+                    mobileHeaderExpanded.classList.toggle('show');
+                    mobileToggle.textContent = mobileHeaderExpanded.classList.contains('show') ? '✕ 关闭' : '📊 图例';
+                });
+            }
 
             // UI按钮
             document.getElementById('btn-flow').addEventListener('click', () => {
@@ -1132,7 +1301,11 @@
             });
 
             document.getElementById('btn-reset').addEventListener('click', () => {
-                camera.position.set(0, 12, 18);
+                if (isMobile) {
+                    camera.position.set(0, 18, 25);
+                } else {
+                    camera.position.set(0, 12, 18);
+                }
                 controls.target.set(2, 0, 0);
                 controls.update();
                 showToast('视角已重置');
@@ -1145,6 +1318,27 @@
                     showToast('请先选择一个组件');
                 }
             });
+        }
+
+        // 触摸事件处理
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        function onTouchStart(event) {
+            if (event.touches.length === 1) {
+                touchStartX = event.touches[0].clientX;
+                touchStartY = event.touches[0].clientY;
+                
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.touches[0].clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.touches[0].clientY - rect.top) / rect.height) * 2 + 1;
+            }
+        }
+
+        function onTouchMove(event) {
+            if (event.touches.length === 1) {
+                event.preventDefault();
+            }
         }
 
         function onMouseClick(event) {
@@ -1210,6 +1404,14 @@
 
             // 更新信息面板
             updateInfoPanel(component.userData);
+            
+            // 移动端自动显示信息面板
+            if (isMobile) {
+                const infoPanel = document.getElementById('infoPanel');
+                const showBtn = document.getElementById('showInfoBtn');
+                infoPanel.classList.add('active');
+                showBtn.classList.remove('visible');
+            }
         }
 
         function deselectComponent() {
@@ -1275,6 +1477,14 @@
         }
 
         function onWindowResize() {
+            const newIsMobile = window.innerWidth <= 768;
+            
+            // 如果移动端状态变化，重新加载页面
+            if (newIsMobile !== isMobile) {
+                location.reload();
+                return;
+            }
+            
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
