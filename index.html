@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光纤通信系统 - 3D立体流程图</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* 玻璃拟态UI */
+        .ui-panel {
+            position: absolute;
+            background: rgba(15, 20, 35, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 195, 247, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            z-index: 100;
+        }
+
+        .header {
+            top: 20px;
+            left: 20px;
+            right: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 1.4em;
+            color: #4fc3f7;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header .subtitle {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .wavelength-legend {
+            display: flex;
+            gap: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .info-panel {
+            top: 100px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            display: none; /* 默认隐藏 */
+        }
+
+        .info-panel.active {
+            display: block;
+        }
+
+        .info-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(79, 195, 247, 0.2);
+        }
+
+        .info-panel-header h3 {
+            color: #4fc3f7;
+            font-size: 1.1em;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .component-detail {
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9em;
+        }
+
+        .detail-label {
+            color: #aaa;
+        }
+
+        .detail-value {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .loss-value {
+            color: #ff7043;
+            font-weight: bold;
+        }
+
+        .analysis-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(79, 195, 247, 0.2);
+        }
+
+        .analysis-section h4 {
+            color: #ff7043;
+            margin-bottom: 12px;
+            font-size: 0.95em;
+        }
+
+        .analysis-item {
+            padding: 10px;
+            background: rgba(255, 112, 67, 0.08);
+            border-left: 3px solid #ff7043;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 10px;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        .analysis-item .loss-tag {
+            color: #ff7043;
+            font-weight: bold;
+            float: right;
+        }
+
+        .total-loss {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(79, 195, 247, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .total-loss .label {
+            font-size: 0.85em;
+            color: #aaa;
+        }
+
+        .total-loss .value {
+            font-size: 1.8em;
+            color: #4fc3f7;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .controls-bar {
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 8px;
+            background: rgba(79, 195, 247, 0.1);
+            color: #4fc3f7;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:hover {
+            background: rgba(79, 195, 247, 0.25);
+            transform: translateY(-2px);
+        }
+
+        button.active {
+            background: rgba(79, 195, 247, 0.3);
+            box-shadow: 0 0 15px rgba(79, 195, 247, 0.3);
+        }
+
+        .show-info-btn {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            z-index: 99;
+            display: none;
+        }
+
+        .show-info-btn.visible {
+            display: block;
+        }
+
+        .toast {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 30, 50, 0.95);
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            color: #4fc3f7;
+            font-size: 0.9em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 200;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #4fc3f7;
+            font-size: 1.2em;
+            z-index: 300;
+        }
+
+        /* 自定义滚动条 */
+        .info-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .info-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .info-panel::-webkit-scrollbar-thumb {
+            background: rgba(79, 195, 247, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div class="loader" id="loader">正在构建光纤系统模型...</div>
+    </div>
+
+    <!-- 顶部标题栏 -->
+    <div class="ui-panel header">
+        <div>
+            <h1>🔬 空芯光纤通信系统</h1>
+            <div class="subtitle">1550nm信号光 + 1080nm泵浦光 | 5km空芯光纤传输 | 包层光剥离分析</div>
+        </div>
+        <div class="wavelength-legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ff1744; color: #ff1744;"></div>
+                <span>1550nm 信号光</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #00e676; color: #00e676;"></div>
+                <span>1080nm 泵浦光</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ff9100; color: #ff9100;"></div>
+                <span>包层光 (需剥离)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 信息面板 -->
+    <div class="ui-panel info-panel active" id="infoPanel">
+        <div class="info-panel-header">
+            <h3>📊 系统损耗分析</h3>
+            <button class="close-btn" id="closeInfoBtn">✕</button>
+        </div>
+        
+        <div class="component-detail" id="componentDetail">
+            <div class="detail-row">
+                <span class="detail-label">点击组件查看详情</span>
+            </div>
+        </div>
+
+        <div class="analysis-section">
+            <h4>🔍 损耗分项统计</h4>
+            <div class="analysis-item">
+                合束器 (WDM)
+                <span class="loss-tag">0.31dB</span>
+                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">1550nm与1080nm波分复用耦合损耗</div>
+            </div>
+            <div class="analysis-item">
+                实芯-空芯熔接点 + 5km空芯光纤
+                <span class="loss-tag">2.4dB</span>
+                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">
+                    光纤损耗: 0.3dB/km × 5km = 1.5dB<br>
+                    熔接点损耗: 0.9dB
+                </div>
+            </div>
+            <div class="analysis-item">
+                空芯-实芯熔接点
+                <span class="loss-tag">0.24dB</span>
+            </div>
+            <div class="analysis-item">
+                CPS + 分束器
+                <span class="loss-tag">1.25dB</span>
+                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">
+                    实芯-空芯熔接产生包层光，由CPS剔除
+                </div>
+            </div>
+            <div class="analysis-item">
+                光纤与PD耦合 + PD转换效率
+                <span class="loss-tag">4.56dB (35%)</span>
+            </div>
+        </div>
+
+        <div class="total-loss">
+            <div class="label">系统总损耗</div>
+            <div class="value">8.76 dB</div>
+        </div>
+    </div>
+
+    <!-- 显示信息面板按钮 -->
+    <button class="show-info-btn" id="showInfoBtn">📊 显示分析</button>
+
+    <!-- 控制栏 -->
+    <div class="ui-panel controls-bar">
+        <button id="btn-flow" class="active">▶ 光路流动</button>
+        <button id="btn-particles">✨ 光子显示</button>
+        <button id="btn-cladding">👁 包层光</button>
+        <button id="btn-reset">🎯 重置视角</button>
+        <button id="btn-focus">🔍 聚焦节点</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+        // ==================== 全局变量 ====================
+        let scene, camera, renderer, composer, controls;
+        let raycaster, mouse;
+        let components = [];
+        let fibers = [];
+        let particles = [];
+        let isFlowing = true;
+        let showParticles = true;
+        let showCladding = true;
+        let selectedComponent = null;
+        let time = 0;
+
+        // 组件配置
+        const COMPONENT_DATA = {
+            laser1550: {
+                name: '1550nm Laser',
+                type: 'laser',
+                color: 0xff1744,
+                loss: 0,
+                desc: '信号光源，输出波长1550nm',
+                position: new THREE.Vector3(-12, 0, 2)
+            },
+            laser1080: {
+                name: '1080nm Laser',
+                type: 'laser',
+                color: 0x00e676,
+                loss: 0,
+                desc: '泵浦光源，输出波长1080nm',
+                position: new THREE.Vector3(-12, 0, -2)
+            },
+            wdm1: {
+                name: 'WDM 合束器',
+                type: 'wdm',
+                color: 0x4fc3f7,
+                loss: 0.31,
+                desc: '波分复用器，将1550nm和1080nm合束',
+                position: new THREE.Vector3(-6, 0, 0)
+            },
+            fiber1: {
+                name: '实芯-空芯熔接点',
+                type: 'splice',
+                color: 0xff9100,
+                loss: 0.9,
+                desc: '实芯光纤与空芯光纤熔接点，产生包层光',
+                position: new THREE.Vector3(-2, 0, 0)
+            },
+            hollowFiber: {
+                name: '5km 空芯光纤',
+                type: 'fiber',
+                color: 0x7c4dff,
+                loss: 1.5,
+                desc: '空芯反谐振光纤，传输损耗0.3dB/km',
+                position: new THREE.Vector3(2, 0, 0)
+            },
+            splice2: {
+                name: '空芯-实芯熔接点',
+                type: 'splice',
+                color: 0xff9100,
+                loss: 0.24,
+                desc: '空芯光纤与实芯光纤熔接点',
+                position: new THREE.Vector3(6, 0, 0)
+            },
+            cps: {
+                name: 'CPS 包层光剥离器',
+                type: 'cps',
+                color: 0xff5722,
+                loss: 1.25,
+                desc: 'Cladding Power Stripper，剥离包层光',
+                position: new THREE.Vector3(9, 0, 0)
+            },
+            wdm2: {
+                name: 'WDM 分束器',
+                type: 'wdm',
+                color: 0x4fc3f7,
+                loss: 0,
+                desc: '波分解复用器',
+                position: new THREE.Vector3(11, 0, 0)
+            },
+            mfa: {
+                name: 'MFA 模场适配器',
+                type: 'mfa',
+                color: 0xab47bc,
+                loss: 4.2,
+                desc: 'Mode Field Adapter，模场匹配与光电转换',
+                position: new THREE.Vector3(14, 0, 2)
+            }
+        };
+
+        // ==================== 初始化 ====================
+        function init() {
+            const container = document.getElementById('canvas-container');
+
+            // 场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050508);
+            scene.fog = new THREE.FogExp2(0x050508, 0.015);
+
+            // 相机
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 12, 18);
+            camera.lookAt(2, 0, 0);
+
+            // 渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // 后处理
+            setupPostProcessing();
+
+            // 控制器
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2.2;
+            controls.minDistance = 5;
+            controls.maxDistance = 40;
+            controls.target.set(2, 0, 0);
+
+            // 射线检测
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // 灯光
+            setupLights();
+
+            // 创建系统
+            createOpticalSystem();
+
+            // 事件
+            setupEvents();
+
+            // 隐藏加载器
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+            }, 800);
+
+            // 开始动画
+            animate();
+        }
+
+        function setupPostProcessing() {
+            composer = new EffectComposer(renderer);
+            
+            const renderPass = new RenderPass(scene, camera);
+            composer.addPass(renderPass);
+
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.6, 0.5, 0.8
+            );
+            composer.addPass(bloomPass);
+
+            const outputPass = new OutputPass();
+            composer.addPass(outputPass);
+        }
+
+        function setupLights() {
+            const ambientLight = new THREE.AmbientLight(0x404060, 1.5);
+            scene.add(ambientLight);
+
+            const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            mainLight.position.set(10, 20, 10);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+
+            const fillLight = new THREE.DirectionalLight(0x4fc3f7, 0.4);
+            fillLight.position.set(-10, 10, -10);
+            scene.add(fillLight);
+
+            // 点光源阵列
+            const colors = [0xff1744, 0x00e676, 0x4fc3f7];
+            colors.forEach((color, i) => {
+                const light = new THREE.PointLight(color, 0.6, 15);
+                light.position.set(-8 + i * 8, 3, 5);
+                scene.add(light);
+            });
+        }
+
+        // ==================== 创建光学系统 ====================
+        function createOpticalSystem() {
+            // 创建各个组件
+            Object.entries(COMPONENT_DATA).forEach(([key, data]) => {
+                const component = createComponent(key, data);
+                components.push(component);
+                scene.add(component);
+            });
+
+            // 创建光纤连接
+            createFiberConnections();
+
+            // 创建标签
+            createLabels();
+
+            // 创建粒子系统
+            createParticleSystems();
+        }
+
+        function createComponent(key, data) {
+            const group = new THREE.Group();
+            group.position.copy(data.position);
+            group.userData = { key, ...data };
+
+            let geometry, material, mesh;
+
+            const emissiveColor = new THREE.Color(data.color).multiplyScalar(0.3);
+
+            switch (data.type) {
+                case 'laser':
+                    // 激光器 - 圆柱形
+                    geometry = new THREE.CylinderGeometry(0.6, 0.6, 1.5, 32);
+                    material = new THREE.MeshStandardMaterial({
+                        color: data.color,
+                        metalness: 0.8,
+                        roughness: 0.2,
+                        emissive: data.color,
+                        emissiveIntensity: 0.4
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.rotation.z = Math.PI / 2;
+                    mesh.castShadow = true;
+
+                    // 输出端口光晕
+                    const glowGeo = new THREE.SphereGeometry(0.3, 16, 16);
+                    const glowMat = new THREE.MeshBasicMaterial({
+                        color: data.color,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    const glow = new THREE.Mesh(glowGeo, glowMat);
+                    glow.position.x = 0.8;
+                    group.add(glow);
+                    break;
+
+                case 'wdm':
+                    // WDM - 长方体带斜面
+                    geometry = new THREE.BoxGeometry(1.2, 1.2, 1.8);
+                    material = new THREE.MeshStandardMaterial({
+                        color: data.color,
+                        metalness: 0.7,
+                        roughness: 0.3,
+                        emissive: emissiveColor,
+                        emissiveIntensity: 0.3
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+
+                    // 顶部标识
+                    const labelGeo = new THREE.BoxGeometry(0.8, 0.1, 1.2);
+                    const labelMat = new THREE.MeshStandardMaterial({
+                        color: 0xffffff,
+                        emissive: 0xffffff,
+                        emissiveIntensity: 0.5
+                    });
+                    const label = new THREE.Mesh(labelGeo, labelMat);
+                    label.position.y = 0.65;
+                    group.add(label);
+                    break;
+
+                case 'splice':
+                    // 熔接点 - 小球形
+                    geometry = new THREE.SphereGeometry(0.4, 32, 32);
+                    material = new THREE.MeshStandardMaterial({
+                        color: data.color,
+                        metalness: 0.9,
+                        roughness: 0.1,
+                        emissive: data.color,
+                        emissiveIntensity: 0.5
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+                    break;
+
+                case 'fiber':
+                    // 空芯光纤 - 长圆柱体
+                    geometry = new THREE.CylinderGeometry(0.3, 0.3, 4, 32);
+                    material = new THREE.MeshPhysicalMaterial({
+                        color: data.color,
+                        metalness: 0.1,
+                        roughness: 0.1,
+                        transmission: 0.6,
+                        transparent: true,
+                        opacity: 0.7,
+                        emissive: emissiveColor,
+                        emissiveIntensity: 0.2
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.rotation.z = Math.PI / 2;
+                    mesh.castShadow = true;
+
+                    // 内部空芯
+                    const innerGeo = new THREE.CylinderGeometry(0.15, 0.15, 4.1, 32);
+                    const innerMat = new THREE.MeshBasicMaterial({
+                        color: 0x000000,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    const inner = new THREE.Mesh(innerGeo, innerMat);
+                    inner.rotation.z = Math.PI / 2;
+                    group.add(inner);
+                    break;
+
+                case 'cps':
+                    // CPS - 六棱柱
+                    geometry = new THREE.CylinderGeometry(0.7, 0.7, 1.2, 6);
+                    material = new THREE.MeshStandardMaterial({
+                        color: data.color,
+                        metalness: 0.6,
+                        roughness: 0.4,
+                        emissive: emissiveColor,
+                        emissiveIntensity: 0.3
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.rotation.z = Math.PI / 2;
+                    mesh.castShadow = true;
+
+                    // 散热片
+                    for (let i = 0; i < 3; i++) {
+                        const finGeo = new THREE.BoxGeometry(0.8, 0.05, 0.6);
+                        const fin = new THREE.Mesh(finGeo, material);
+                        fin.position.y = (i - 1) * 0.3;
+                        fin.position.x = -0.3;
+                        group.add(fin);
+                    }
+                    break;
+
+                case 'mfa':
+                    // MFA - 复杂形状
+                    geometry = new THREE.BoxGeometry(1, 1, 1.2);
+                    material = new THREE.MeshStandardMaterial({
+                        color: data.color,
+                        metalness: 0.7,
+                        roughness: 0.3,
+                        emissive: emissiveColor,
+                        emissiveIntensity: 0.3
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+
+                    // 连接器
+                    const connGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.5, 16);
+                    const connMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 1, roughness: 0.1 });
+                    const conn1 = new THREE.Mesh(connGeo, connMat);
+                    conn1.rotation.z = Math.PI / 2;
+                    conn1.position.x = -0.75;
+                    group.add(conn1);
+                    break;
+
+                default:
+                    geometry = new THREE.BoxGeometry(1, 1, 1);
+                    material = new THREE.MeshStandardMaterial({ color: data.color });
+                    mesh = new THREE.Mesh(geometry, material);
+            }
+
+            if (mesh) {
+                mesh.userData.isComponent = true;
+                mesh.userData.parentGroup = group;
+                group.add(mesh);
+            }
+
+            // 选中指示器（默认隐藏）
+            const indicatorGeo = new THREE.RingGeometry(1, 1.2, 32);
+            const indicatorMat = new THREE.MeshBasicMaterial({
+                color: 0xffff00,
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide
+            });
+            const indicator = new THREE.Mesh(indicatorGeo, indicatorMat);
+            indicator.rotation.x = -Math.PI / 2;
+            indicator.position.y = -0.8;
+            group.add(indicator);
+
+            // 损耗标签
+            if (data.loss > 0) {
+                const lossLabel = createTextSprite(`loss=${data.loss}dB`, '#ff7043', 0.8);
+                lossLabel.position.set(0, 1.5, 0);
+                group.add(lossLabel);
+            }
+
+            return group;
+        }
+
+        function createFiberConnections() {
+            const connections = [
+                { from: 'laser1550', to: 'wdm1', type: 'signal' },
+                { from: 'laser1080', to: 'wdm1', type: 'pump' },
+                { from: 'wdm1', to: 'fiber1', type: 'combined' },
+                { from: 'fiber1', to: 'hollowFiber', type: 'combined' },
+                { from: 'hollowFiber', to: 'splice2', type: 'combined' },
+                { from: 'splice2', to: 'cps', type: 'combined' },
+                { from: 'cps', to: 'wdm2', type: 'combined' },
+                { from: 'wdm2', to: 'mfa', type: 'signal' }
+            ];
+
+            connections.forEach(conn => {
+                const startComp = components.find(c => c.userData.key === conn.from);
+                const endComp = components.find(c => c.userData.key === conn.to);
+                
+                if (startComp && endComp) {
+                    createFiber(startComp.position, endComp.position, conn.type);
+                }
+            });
+
+            // 包层光路径（红色虚线）
+            if (showCladding) {
+                const claddingPath = [
+                    components.find(c => c.userData.key === 'fiber1'),
+                    components.find(c => c.userData.key === 'hollowFiber'),
+                    components.find(c => c.userData.key === 'splice2'),
+                    components.find(c => c.userData.key === 'cps')
+                ];
+
+                for (let i = 0; i < claddingPath.length - 1; i++) {
+                    createCladdingFiber(claddingPath[i].position, claddingPath[i + 1].position);
+                }
+            }
+        }
+
+        function createFiber(start, end, type) {
+            const mid = start.clone().add(end).multiplyScalar(0.5);
+            mid.y += 0.5;
+
+            const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+            const points = curve.getPoints(50);
+
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            
+            let color;
+            switch (type) {
+                case 'signal': color = 0xff1744; break;
+                case 'pump': color = 0x00e676; break;
+                case 'combined': color = 0xff9100; break;
+                default: color = 0x4fc3f7;
+            }
+
+            const material = new THREE.LineBasicMaterial({
+                color: color,
+                linewidth: 2,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const line = new THREE.Line(geometry, material);
+            line.userData = { curve, type, isFiber: true };
+            scene.add(line);
+            fibers.push(line);
+
+            // 光纤护套（粗线）
+            const tubeGeo = new THREE.TubeGeometry(curve, 50, 0.08, 8, false);
+            const tubeMat = new THREE.MeshPhysicalMaterial({
+                color: 0x888888,
+                metalness: 0.3,
+                roughness: 0.5,
+                transparent: true,
+                opacity: 0.3
+            });
+            const tube = new THREE.Mesh(tubeGeo, tubeMat);
+            scene.add(tube);
+        }
+
+        function createCladdingFiber(start, end) {
+            const mid = start.clone().add(end).multiplyScalar(0.5);
+            mid.y -= 0.8;
+
+            const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+            const points = curve.getPoints(30);
+
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineDashedMaterial({
+                color: 0xff5722,
+                linewidth: 1,
+                dashSize: 0.3,
+                gapSize: 0.2,
+                transparent: true,
+                opacity: 0.6
+            });
+
+            const line = new THREE.Line(geometry, material);
+            line.computeLineDistances();
+            line.userData = { isCladding: true };
+            scene.add(line);
+            fibers.push(line);
+        }
+
+        // ==================== 字体渲染：12px小字号，无阴影 ====================
+        function createTextSprite(text, color, scale) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            // 高分辨率画布
+            const dpr = 2;
+            const cssWidth = 512;
+            const cssHeight = 128;
+            canvas.width = cssWidth * dpr;
+            canvas.height = cssHeight * dpr;
+            context.scale(dpr, dpr);
+
+            // 透明背景
+            context.clearRect(0, 0, cssWidth, cssHeight);
+
+            // 字体设置 - 12px小字号
+            const fontSize = 12;
+            context.font = `bold ${fontSize}px "Microsoft YaHei", "SimHei", "PingFang SC", "Noto Sans SC", sans-serif`;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+
+            // 测量文字
+            const metrics = context.measureText(text);
+            const textWidth = metrics.width;
+            
+            // 自适应缩小
+            let finalFontSize = fontSize;
+            if (textWidth > cssWidth * 0.9) {
+                finalFontSize = Math.floor(fontSize * (cssWidth * 0.9 / textWidth));
+                context.font = `bold ${finalFontSize}px "Microsoft YaHei", "SimHei", "PingFang SC", "Noto Sans SC", sans-serif`;
+            }
+
+            // 纯色填充 - 无阴影
+            context.fillStyle = color;
+            context.fillText(text, cssWidth / 2, cssHeight / 2);
+
+            // 创建纹理
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.generateMipmaps = false;
+            texture.needsUpdate = true;
+
+            const material = new THREE.SpriteMaterial({ 
+                map: texture,
+                transparent: true,
+                alphaTest: 0.01
+            });
+
+            const sprite = new THREE.Sprite(material);
+            
+            // 计算宽高比
+            const aspectRatio = cssWidth / cssHeight;
+            sprite.scale.set(5 * scale * aspectRatio, 5 * scale, 1);
+            
+            return sprite;
+        }
+
+        function createLabels() {
+            Object.entries(COMPONENT_DATA).forEach(([key, data]) => {
+                const label = createTextSprite(data.name, '#ffffff', 1);
+                label.position.copy(data.position);
+                label.position.y -= 1.5;
+                scene.add(label);
+            });
+        }
+
+        function createParticleSystems() {
+            // 信号光粒子（红色）
+            createParticles(0xff1744, 'signal');
+            // 泵浦光粒子（绿色）
+            createParticles(0x00e676, 'pump');
+        }
+
+        function createParticles(color, type) {
+            const particleCount = 30;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = 0;
+                positions[i * 3 + 1] = 0;
+                positions[i * 3 + 2] = 0;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            // 光点大小调大一倍：0.15 -> 0.3
+            const material = new THREE.PointsMaterial({
+                color: color,
+                size: 0.3,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+
+            const particleSystem = new THREE.Points(geometry, material);
+            particleSystem.userData = {
+                type,
+                progress: Array(particleCount).fill(0).map(() => Math.random()),
+                speed: Array(particleCount).fill(0).map(() => 0.002 + Math.random() * 0.003)
+            };
+            
+            scene.add(particleSystem);
+            particles.push(particleSystem);
+        }
+
+        // ==================== 动画与交互 ====================
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (isFlowing) {
+                updateParticles();
+            }
+
+            // 组件浮动动画
+            components.forEach((comp, i) => {
+                comp.position.y = Math.sin(time + i * 0.5) * 0.05;
+            });
+
+            // 更新光纤位置
+            updateFiberPositions();
+
+            controls.update();
+            composer.render();
+        }
+
+        function updateParticles() {
+            if (!showParticles) {
+                particles.forEach(p => p.visible = false);
+                return;
+            }
+
+            particles.forEach(p => {
+                p.visible = true;
+                const positions = p.geometry.attributes.position.array;
+                const data = p.userData;
+
+                for (let i = 0; i < data.progress.length; i++) {
+                    data.progress[i] += data.speed[i];
+                    if (data.progress[i] > 1) data.progress[i] = 0;
+
+                    // 根据类型选择路径
+                    let curve;
+                    if (data.type === 'signal') {
+                        // 1550nm路径
+                        const signalFibers = fibers.filter(f => f.userData.type === 'signal' || f.userData.type === 'combined');
+                        if (signalFibers.length > 0) {
+                            const fiberIndex = Math.floor(data.progress[i] * signalFibers.length);
+                            const fiber = signalFibers[Math.min(fiberIndex, signalFibers.length - 1)];
+                            if (fiber && fiber.userData.curve) {
+                                const t = (data.progress[i] * signalFibers.length) % 1;
+                                const point = fiber.userData.curve.getPoint(t);
+                                positions[i * 3] = point.x;
+                                positions[i * 3 + 1] = point.y + Math.sin(time * 3 + i) * 0.1;
+                                positions[i * 3 + 2] = point.z;
+                            }
+                        }
+                    } else if (data.type === 'pump') {
+                        // 1080nm路径
+                        const pumpFibers = fibers.filter(f => f.userData.type === 'pump' || f.userData.type === 'combined');
+                        if (pumpFibers.length > 0) {
+                            const fiberIndex = Math.floor(data.progress[i] * pumpFibers.length);
+                            const fiber = pumpFibers[Math.min(fiberIndex, pumpFibers.length - 1)];
+                            if (fiber && fiber.userData.curve) {
+                                const t = (data.progress[i] * pumpFibers.length) % 1;
+                                const point = fiber.userData.curve.getPoint(t);
+                                positions[i * 3] = point.x;
+                                positions[i * 3 + 1] = point.y + Math.cos(time * 3 + i) * 0.1;
+                                positions[i * 3 + 2] = point.z;
+                            }
+                        }
+                    }
+                }
+
+                p.geometry.attributes.position.needsUpdate = true;
+            });
+        }
+
+        function updateFiberPositions() {
+            // 光纤跟随组件移动
+            fibers.forEach(fiber => {
+                if (!fiber.userData.isCladding) {
+                    // 重新计算曲线
+                    // 这里简化处理，实际应该重新计算起点终点
+                }
+            });
+        }
+
+        // ==================== 事件处理 ====================
+        function setupEvents() {
+            renderer.domElement.addEventListener('click', onMouseClick);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('resize', onWindowResize);
+
+            // 信息面板关闭按钮
+            const infoPanel = document.getElementById('infoPanel');
+            const closeBtn = document.getElementById('closeInfoBtn');
+            const showBtn = document.getElementById('showInfoBtn');
+
+            closeBtn.addEventListener('click', () => {
+                infoPanel.classList.remove('active');
+                showBtn.classList.add('visible');
+                showToast('信息面板已关闭');
+            });
+
+            showBtn.addEventListener('click', () => {
+                infoPanel.classList.add('active');
+                showBtn.classList.remove('visible');
+                showToast('信息面板已显示');
+            });
+
+            // UI按钮
+            document.getElementById('btn-flow').addEventListener('click', () => {
+                isFlowing = !isFlowing;
+                document.getElementById('btn-flow').classList.toggle('active', isFlowing);
+                showToast(isFlowing ? '光路流动已开启' : '光路流动已暂停');
+            });
+
+            document.getElementById('btn-particles').addEventListener('click', () => {
+                showParticles = !showParticles;
+                document.getElementById('btn-particles').classList.toggle('active', showParticles);
+                showToast(showParticles ? '光子显示已开启' : '光子显示已关闭');
+            });
+
+            document.getElementById('btn-cladding').addEventListener('click', () => {
+                showCladding = !showCladding;
+                document.getElementById('btn-cladding').classList.toggle('active', showCladding);
+                
+                fibers.forEach(fiber => {
+                    if (fiber.userData.isCladding) {
+                        fiber.visible = showCladding;
+                    }
+                });
+                showToast(showCladding ? '包层光路径已显示' : '包层光路径已隐藏');
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                camera.position.set(0, 12, 18);
+                controls.target.set(2, 0, 0);
+                controls.update();
+                showToast('视角已重置');
+            });
+
+            document.getElementById('btn-focus').addEventListener('click', () => {
+                if (selectedComponent) {
+                    focusOnComponent(selectedComponent);
+                } else {
+                    showToast('请先选择一个组件');
+                }
+            });
+        }
+
+        function onMouseClick(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const meshes = [];
+            components.forEach(comp => {
+                comp.traverse(child => {
+                    if (child.isMesh) meshes.push(child);
+                });
+            });
+
+            const intersects = raycaster.intersectObjects(meshes);
+
+            if (intersects.length > 0) {
+                const comp = intersects[0].object.userData.parentGroup;
+                if (comp) {
+                    selectComponent(comp);
+                }
+            } else {
+                deselectComponent();
+            }
+        }
+
+        function onMouseMove(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const meshes = [];
+            components.forEach(comp => {
+                comp.traverse(child => {
+                    if (child.isMesh) meshes.push(child);
+                });
+            });
+
+            const intersects = raycaster.intersectObjects(meshes);
+            renderer.domElement.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+        }
+
+        function selectComponent(component) {
+            // 清除之前选中
+            if (selectedComponent) {
+                const prevIndicator = selectedComponent.children.find(c => 
+                    c.geometry && c.geometry.type === 'RingGeometry'
+                );
+                if (prevIndicator) prevIndicator.material.opacity = 0;
+            }
+
+            selectedComponent = component;
+
+            // 高亮当前
+            const indicator = component.children.find(c => 
+                c.geometry && c.geometry.type === 'RingGeometry'
+            );
+            if (indicator) indicator.material.opacity = 0.8;
+
+            // 更新信息面板
+            updateInfoPanel(component.userData);
+        }
+
+        function deselectComponent() {
+            if (selectedComponent) {
+                const indicator = selectedComponent.children.find(c => 
+                    c.geometry && c.geometry.type === 'RingGeometry'
+                );
+                if (indicator) indicator.material.opacity = 0;
+            }
+            selectedComponent = null;
+        }
+
+        function updateInfoPanel(data) {
+            const detail = document.getElementById('componentDetail');
+            detail.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">组件名称</span>
+                    <span class="detail-value">${data.name}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">组件类型</span>
+                    <span class="detail-value">${data.type.toUpperCase()}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">位置坐标</span>
+                    <span class="detail-value">X:${data.position.x.toFixed(1)} Y:${data.position.y.toFixed(1)} Z:${data.position.z.toFixed(1)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">插入损耗</span>
+                    <span class="detail-value loss-value">${data.loss > 0 ? data.loss + ' dB' : '可忽略'}</span>
+                </div>
+                <div class="detail-row" style="flex-direction: column; align-items: flex-start;">
+                    <span class="detail-label" style="margin-bottom: 5px;">功能描述</span>
+                    <span style="color: #ccc; font-size: 0.9em; line-height: 1.5;">${data.desc}</span>
+                </div>
+            `;
+        }
+
+        function focusOnComponent(component) {
+            const targetPos = component.position.clone();
+            const cameraPos = targetPos.clone();
+            cameraPos.y += 5;
+            cameraPos.z += 8;
+
+            const startPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            const startTime = Date.now();
+            const duration = 1000;
+
+            function animateCamera() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                camera.position.lerpVectors(startPos, cameraPos, ease);
+                controls.target.lerpVectors(startTarget, targetPos, ease);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateCamera);
+                }
+            }
+            animateCamera();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>
