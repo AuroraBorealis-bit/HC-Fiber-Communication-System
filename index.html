@@ -407,7 +407,7 @@
     <div class="ui-panel header" id="desktopHeader">
         <div>
             <h1>🔬 空芯光纤通信系统</h1>
-            <div class="subtitle"></div>
+            <div class="subtitle">1080nm泵浦光光路损耗分析</div>
         </div>
         <div class="wavelength-legend">
             <div class="legend-item">
@@ -454,7 +454,7 @@
     <!-- 信息面板 -->
     <div class="ui-panel info-panel active" id="infoPanel">
         <div class="info-panel-header">
-            <h3>📊 系统损耗分析</h3>
+            <h3>📊 1080nm系统损耗分析</h3>
             <button class="close-btn" id="closeInfoBtn">✕</button>
         </div>
         
@@ -465,11 +465,16 @@
         </div>
 
         <div class="analysis-section">
-            <h4>🔍 损耗分项统计</h4>
+            <h4>🔍 1080nm损耗分项统计</h4>
             <div class="analysis-item">
-                合束器 (WDM)
+                CPS预处理
+                <span class="loss-tag">0.1dB</span>
+                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">泵浦光前置包层光剥离损耗</div>
+            </div>
+            <div class="analysis-item">
+                WDM合束器
                 <span class="loss-tag">0.31dB</span>
-                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">1550nm与1080nm波分复用耦合损耗</div>
+                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">1080nm波分复用耦合损耗</div>
             </div>
             <div class="analysis-item">
                 实芯-空芯熔接点 + 5km空芯光纤
@@ -486,19 +491,18 @@
             <div class="analysis-item">
                 CPS + 分束器
                 <span class="loss-tag">1.25dB</span>
-                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">
-                    实芯-空芯熔接产生包层光，由CPS剔除
-                </div>
+                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">包层光剥离与波分分离损耗</div>
             </div>
             <div class="analysis-item">
-                光纤与PD耦合 + PD转换效率
-                <span class="loss-tag">4.56dB (35%)</span>
+                1080nm PD耦合转换
+                <span class="loss-tag">2.76dB</span>
+                <div style="color: #aaa; margin-top: 4px; font-size: 0.9em;">光纤与PD耦合+光电转换损耗</div>
             </div>
         </div>
 
         <div class="total-loss">
-            <div class="label">系统总损耗</div>
-            <div class="value">8.76 dB</div>
+            <div class="label">1080nm系统总损耗</div>
+            <div class="value">7.06 dB</div>
         </div>
     </div>
 
@@ -565,11 +569,11 @@
                 position: new THREE.Vector3(-14, 0, -2.5)
             },
             cps1080: {
-                name: 'CPS',
+                name: 'CPS预处理',
                 type: 'cps',
                 color: 0xff5722,
-                loss: 0,
-                desc: '1080nm泵浦光预处理包层光剥离器',
+                loss: 0.1,
+                desc: '1080nm泵浦光前置包层光剥离器',
                 position: new THREE.Vector3(-10, 0, -2.5)
             },
             wdm1: {
@@ -577,7 +581,7 @@
                 type: 'wdm',
                 color: 0x4fc3f7,
                 loss: 0.31,
-                desc: '波分复用器，将1550nm和1080nm合束',
+                desc: '波分复用器，合束1550nm/1080nm',
                 position: new THREE.Vector3(-6, 0, 0)
             },
             fiber1: {
@@ -617,16 +621,24 @@
                 type: 'wdm',
                 color: 0x4fc3f7,
                 loss: 0,
-                desc: '波分解复用器',
+                desc: '波分解复用器，分离信号光与泵浦光',
                 position: new THREE.Vector3(11, 0, 0)
             },
             mfa: {
                 name: 'MFA 模场适配器',
                 type: 'mfa',
                 color: 0xab47bc,
-                loss: 4.2,
-                desc: 'Mode Field Adapter，模场匹配与光电转换',
+                loss: 0,
+                desc: 'Mode Field Adapter，1550nm信号光接收',
                 position: new THREE.Vector3(14, 0, 2.5)
+            },
+            pd1080: {
+                name: '1080nm PD探测器',
+                type: 'pd',
+                color: 0x00e676,
+                loss: 2.76,
+                desc: '1080nm泵浦光光电探测器，完成光信号接收',
+                position: new THREE.Vector3(14, 0, -2.5)
             }
         };
 
@@ -906,6 +918,32 @@
                     conn1.position.x = -0.75;
                     group.add(conn1);
                     break;
+                case 'pd':
+                    // PD探测器 - 圆柱形接收端
+                    geometry = new THREE.CylinderGeometry(0.7, 0.7, 1.5, 32);
+                    material = new THREE.MeshStandardMaterial({
+                        color: data.color,
+                        metalness: 0.8,
+                        roughness: 0.2,
+                        emissive: data.color,
+                        emissiveIntensity: 0.4
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.rotation.z = Math.PI / 2;
+                    mesh.castShadow = true;
+
+                    // 接收面
+                    const receiveGeo = new THREE.CircleGeometry(0.5, 16);
+                    const receiveMat = new THREE.MeshBasicMaterial({
+                        color: data.color,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    const receive = new THREE.Mesh(receiveGeo, receiveMat);
+                    receive.position.x = 0.8;
+                    receive.rotation.y = Math.PI;
+                    group.add(receive);
+                    break;
 
                 default:
                     geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -952,7 +990,8 @@
                 { from: 'hollowFiber', to: 'splice2', type: 'combined' },
                 { from: 'splice2', to: 'cps', type: 'combined' },
                 { from: 'cps', to: 'wdm2', type: 'combined' },
-                { from: 'wdm2', to: 'mfa', type: 'signal' }
+                { from: 'wdm2', to: 'mfa', type: 'signal' },
+                { from: 'wdm2', to: 'pd1080', type: 'pump' }
             ];
 
             connections.forEach(conn => {
